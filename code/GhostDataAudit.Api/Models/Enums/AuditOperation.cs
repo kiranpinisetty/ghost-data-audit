@@ -1,0 +1,26 @@
+namespace GhostDataAudit.Api.Models.Enums;
+
+public enum AuditOperation
+{
+    // Findings
+    REPORT_REMAINING_RECORD,
+    REPORT_EXPOSED_PII,
+    REPORT_ACTIVE_DATA_FLOW,
+    REPORT_RESTORE_RISK,
+
+    // Remediation
+    DISABLE_DATA_FLOW,
+    BLOCK_RESTORE,
+    DELETE_RECORD,
+    REDACT_RECORD,
+    ANONYMIZE_RECORD,
+
+    // Verification
+    VERIFY_RECORD_ABSENT,
+    VERIFY_RECORD_PRESENT,
+    VERIFY_RECORD_REDACTED,
+    VERIFY_RECORD_ANONYMIZED,
+    VERIFY_DATA_FLOW_DISABLED,
+    VERIFY_RESTORE_BLOCKED
+}
+
