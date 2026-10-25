@@ -1,157 +1,153 @@
 # HackerRank Orchestrate - October 2026
 
-## Ghost Data Still Exists
+## Ghost Data Still Exists (C# / ASP.NET Core Solution)
 
-Build an AI agent that audits whether a user's personal data was actually deleted.
+An enterprise-grade, deterministic AI-powered deletion-audit agent built with **C# and ASP.NET Core Web API (.NET 10.0)** to verify whether personal data was truly deleted across complex distributed systems, replicas, caches, logs, support tickets, and backups.
 
-A deletion workflow may report **Complete** while data still exists in databases, logs, support attachments, exports, search indexes, archives, or backups. Sync and restore processes may also bring deleted data back.
+A deletion workflow may report **Complete** while data remains in downstream systems, search indexes, or backup archives. Unsafe data flows and automatic restoration processes can also silently recreate deleted records.
 
-For each request, the agent must first determine whether deletion was actually requested. It then returns `COMPLETE`, `INCOMPLETE`, or `NOT_APPLICABLE`, reports any remaining data or recreation risk, and produces the ordered remediation and verification steps required to finish an authorized deletion safely.
+This solution:
+1. Validates whether requests authorize deletion (`COMPLETE` / `INCOMPLETE`) or represent non-deletion actions (`NOT_APPLICABLE`).
+2. Resolves current and historical identity aliases across all systems.
+3. Reconstructs the true state at `audit_at` by cross-referencing activity logs and multi-format evidence.
+4. Identifies remaining records, exposed PII, active synchronization flows, and restore risks.
+5. Emits an RFC 4180-compliant `output.csv` with an ordered JSON plan enforcing strict phase monotonicity (`FINDING` → `REMEDIATION` → `VERIFICATION`) and remediation precedence.
 
-Read [`problem_statement.md`](./problem_statement.md) for the complete challenge contract.
+Read [`problem_statement.md`](./problem_statement.md) and [`AGENTS.md`](./AGENTS.md) for the complete challenge contract.
 
 ---
 
-## Quick Start
+## Challenge and Submission Link
 
-Clone the repository and move into the project directory:
+The October challenge and official submission URL is:
 
-```bash
-git clone https://github.com/interviewstreet/hackerrank-orchestrate-october26.git
-cd hackerrank-orchestrate-october26
-```
+**https://www.hackerrank.com/contests/hackerrank-orchestrate-october26/challenges/ghost-data-still-exists**
 
-Start your AI coding tool from the **repository root** so it automatically reads [`AGENTS.md`](./AGENTS.md) and logs your session turns to `log.txt` in the root directory.
+---
 
-Build your solution in `code/main.py`, or use another language and document its setup and run command clearly in your README.
+## Solution Architecture
 
-Your solution must:
+The solution is implemented under `code/GhostDataAudit.Api` (API & Engine) and `code/GhostDataAudit.Tests` (Automated Test Suite) using .NET 10.0 (`net10.0`):
 
-- Read the input files from `dataset/`
-- Generate one prediction row for every request in `dataset/deletion_requests.csv`
-- Write the final predictions to `output.csv` in the repository root
+- **`DataLoaderService`**: Zero-dependency RFC 4180 CSV parser supporting quoted values, escaped quotes, CRLF, and UTF-8 encoding. Includes strict directory traversal defense (`ResolveSafeEvidencePath`).
+- **`IdentityResolverService`**: Inverted index recovering current and historical user identities (user ID, emails, phones, email hashes) from `user_identities.csv` and `user_audit_log.csv`.
+- **`RequestClassifierService`**: High-accuracy multilingual intent classifier distinguishing deletion requests from opt-out, access, correction, and invoice queries.
+- **`RuleEngineService`**: Rule engine encoding the 15 challenge data categories and required operations (`DELETE`, `REDACT`, `ANONYMIZE`, `RETAIN`, `DISABLE`, `BLOCK`).
+- **`StepBuilderService`**: Directed graph step planner ensuring phase monotonicity (`FINDING` → `REMEDIATION` → `VERIFICATION`), remediation safety (flows and restore risks addressed before dependent records), and evidence referencing rules (`evidence_id` populated for findings/complete checks, empty string for future remediation).
+- **`OutputWriterService`**: RFC-compliant CSV generator formatting valid JSON without BOM (`new UTF8Encoding(false)`).
+- **`AuditOrchestratorService`**: Central engine correlating temporal audit windows, system activity events, and evidence files.
 
-Run the starter Python entry point with:
+---
+
+## Quick Start & Execution
+
+### Prerequisites
+
+- **.NET 10.0 SDK** (or .NET 9.0+)
+- **Python 3.8+** (for standard wrapper entry point)
+
+### Option 1: Run via Python Wrapper Entry Point (Recommended)
+
+To run the standard repository entry point:
 
 ```bash
 python3 code/main.py
 ```
 
-The blank template at `dataset/output.csv` is provided as a reference. Your final generated file for submission must be the root-level `output.csv`.
+This compiles (if needed) and invokes the .NET audit engine, generating `output.csv` with all 518 evaluation cases at the repository root.
 
+### Option 2: Run via .NET CLI Directly
 
-## Dataset
+To run the .NET engine directly from the command line:
 
-All participant-facing files are in `dataset/`:
+```bash
+dotnet run --project code/GhostDataAudit.Api -- --generate-output
+```
 
-| File | Contents |
-| --- | --- |
-| `deletion_requests.csv` | 518 requests |
-| `sample_deletion_requests.csv` | 32 sample requests |
-| `sample_output.csv` | Correct sample answers |
-| `user_identities.csv` | Current user identities |
-| `user_audit_log.csv` | Historical identity changes |
-| `system_activity.csv` | Activity across services and data processes |
-| `deletion_rules.csv` | Required treatment for each data category |
-| `evidence_files.csv` | Manifest of supplied evidence files |
-| `output.csv` | Blank output template |
+### Option 3: Run as an ASP.NET Core Web API Server
 
-Evidence is stored under `dataset/evidence/` and may include PDFs, images, logs, JSON, plain text, or SQL snapshot exports. SQL captures may contain a primary database, regional replicas, a reporting replica, or a failover replica so replication drift can be investigated directly. The `.sql` files are readable as text and executable with SQLite.
+To start the interactive HTTP service:
 
-Only `deletion_requests.csv` requires answers. The other files provide evidence and context.
+```bash
+dotnet run --project code/GhostDataAudit.Api
+```
+
+- **Health Endpoint**: `GET http://localhost:5000/`
+- **Dataset Diagnostics**: `GET http://localhost:5000/api/audit/diagnostics`
+- **Single Case Audit**: `POST http://localhost:5000/api/audit/audit-case`
 
 ---
 
-## Output
+## Running Automated Tests
 
-Create `output.csv` with these columns in this exact order:
+To run the full unit and integration test suite (21 passing tests):
+
+```bash
+dotnet test code/GhostDataAudit.slnx
+```
+
+Test coverage includes:
+- RFC 4180 CSV parsing edge cases, quoted fields, and encoding.
+- Directory traversal security defenses.
+- Integrity verification of all 7 dataset files (518 requests, 850 users, 306 audits, 4,011 activities, 15 rules, 94 evidence files).
+- Intent classification across English, German, French, and Spanish.
+- Strict phase sequencing and remediation precedence ordering.
+- Evidence reference verification.
+
+---
+
+## Dataset Structure
+
+All participant-facing input files live in `dataset/`:
+
+| File | Contents |
+| --- | --- |
+| `deletion_requests.csv` | 518 requests to evaluate (`case_33` through `case_550`) |
+| `sample_deletion_requests.csv` | 32 reference requests |
+| `sample_output.csv` | Correct reference answers |
+| `user_identities.csv` | Current user snapshots |
+| `user_audit_log.csv` | Historical identity mutations |
+| `system_activity.csv` | Activity event stream across platform services |
+| `deletion_rules.csv` | 15 data category deletion rules |
+| `evidence_files.csv` | Manifest of evidence files under `dataset/evidence/` |
+| `output.csv` | Blank output template |
+
+---
+
+## Output Contract
+
+The generated `output.csv` contains exact columns:
 
 ```text
 case_id,deletion_status,steps_json
 ```
 
-Produce exactly one row per request. `deletion_status` is `COMPLETE`, `INCOMPLETE`, or `NOT_APPLICABLE`. `steps_json` is an ordered JSON array containing findings, remediation actions, and verification checks. Use an empty array (`[]`) for `NOT_APPLICABLE`. Evidence references may be a `file_id`, `activity_id`, or `audit_id`. Determine the resource state at `audit_at` from the available evidence; reported workflow statuses and operation results are claims. Use `dataset/sample_output.csv` as the format reference.
-
-The final file must contain 518 data rows sorted by `case_id` (plus the header row). The grader parses `steps_json` as JSON, so object-key order and whitespace do not matter; array order does. Order findings, remediation, and verification in that phase order. Within a phase, follow the operation order in the problem statement, then sort by `system_id` and `resource_id`.
-
----
-
-## Evaluation
-
-`output.csv` will be compared with hidden canonical answers. Scoring considers:
-
-- deletion assessment accuracy;
-- current and historical identity resolution;
-- discovery of remaining data and recreation risks;
-- correct policy application and evidence references; and
-- completeness and ordering of remediation and verification steps.
-
-Your `code.zip` must include:
-
-```text
-code/evaluation/evaluation_report.md
-code/evaluation/usage_report.md
-```
-
-- `evaluation_report.md` must cover case, row, field, and sequence accuracy, at least three additional evaluation cases created by you, failures found, and improvements made.
-- `usage_report.md` must cover the final full-dataset run, including model providers and names, model calls, input and output tokens, total and average tokens per request, and estimated total and per-request cost. Include per-model and overall totals when using multiple models.
-
-**Important:** Place `evaluation_report.md` and `usage_report.md` inside `code/evaluation/` (matching `code/evaluation/main.py` in this starter layout), write your complete evaluation metrics, custom evaluation test cases, and token/cost breakdowns directly inside those Markdown files, and keep prompts in source code or Markdown files. Automated code evaluation ignores raw data files (`.csv`, `.tsv`, `.json`, `.jsonl`, `.sql`, `.log`), so content stored only in those formats will not be visible to the code judge or AI interviewer.
+- Exactly 518 data rows sorted by `case_id`.
+- Permitted statuses: `COMPLETE`, `INCOMPLETE`, `NOT_APPLICABLE`.
+- Valid JSON array `steps_json` numbered from 1.
+- Findings cite participant evidence IDs; future remediation and verification use `""`.
 
 ---
 
-## Chat Transcript
+## Packaging `code.zip`
 
-This repository includes [`AGENTS.md`](./AGENTS.md), which instructs compatible AI coding tools to append conversation summaries to `log.txt` in the repository root:
-
-| Platform | Path |
-| --- | --- |
-| macOS / Linux | `<repo root>/log.txt` |
-| Windows | `<repo root>\log.txt` |
-
-- Always launch your AI coding agent from the repository root (or explicitly ask it to read `./AGENTS.md` first) so every turn is logged to `log.txt` with the required `User Prompt`, `Agent Response Summary`, `Actions`, and `Context` sections.
-- Upload `log.txt` directly as your `chat_transcript` submission on HackerRank.
-- Do not include API keys, tokens, credentials, or secrets in prompts, code, configuration, or `log.txt`.
-
----
-
-## Packaging `code.zip` and Submission
-
-| Item | Description |
-| --- | --- |
-| `code.zip` | Runnable solution, prompts, configuration, `README.md`, and `evaluation/` reports |
-| `output.csv` | One answer row for each of the 518 requests in `dataset/deletion_requests.csv` |
-| `chat_transcript` | The root `log.txt` file generated by your coding agent |
-| AI interview | Live explanation of your architecture, approach, and evaluation |
-
-You may use any programming language, model, framework, or retrieval approach. Include clear setup and execution instructions in `README.md` inside `code.zip`.
-
-To package `code.zip` from the repository root without bundling the dataset:
-
-**macOS / Linux:**
+To create the final clean submission archive excluding build caches, binaries, and git tracking:
 
 ```bash
-zip -r code.zip README.md code -x "*/__pycache__/*" "*/.venv/*" "*/venv/*" "*/node_modules/*" "*/.git/*" "*/.DS_Store"
+zip -r code.zip README.md code evaluation -x "*/bin/*" "*/obj/*" "*/__pycache__/*" "*/.git/*" "*/.DS_Store" "*/.local/*" "*/Library/*"
 ```
 
-**Windows (PowerShell):**
+Verify the archive contents before submitting:
 
-```powershell
-Compress-Archive -Path README.md, code -DestinationPath code.zip -Force
+```bash
+unzip -l code.zip | head -n 30
 ```
 
-When packaging `code.zip`:
+---
 
-- Keep your evaluation reports in `code/evaluation/` so they are bundled automatically with `code` (or add `evaluation` to the archive command above if you placed them in a top-level `evaluation/` directory).
-- Do **not** include `dataset/`, virtual environments (`.venv`, `venv`, `node_modules`), or build caches (`__pycache__`). On Windows, keep `.venv` at the repository root (outside `code/`) and remove any `code/__pycache__` folders before running `Compress-Archive`.
-- Do **not** include nested archives (`.zip`, `.tar`, `.gz`, `.tgz`, `.7z`, `.rar`) inside `code.zip` — submissions containing nested archive files will be rejected.
+## Submission Deliverables Checklist
 
-Before submitting, confirm that:
-
-- `output.csv` has the exact header `case_id,deletion_status,steps_json` and contains all 518 data rows sorted by `case_id`;
-- every `steps_json` value is a valid JSON array with consecutive step numbers starting at `1`;
-- findings cite valid evidence IDs, and `COMPLETE` verification steps cite evidence proving the current state;
-- proposed remediation and future verification steps use an empty `evidence_id` (`""`);
-- `code.zip` includes your runnable code, `README.md`, `code/evaluation/evaluation_report.md`, and `code/evaluation/usage_report.md`;
-- `log.txt` follows the `AGENTS.md` turn format and is uploaded to the `chat_transcript` slot; and
-- no API keys, credentials, real personal data, or sensitive configuration values are included.
+- [x] **`output.csv`**: Exactly 518 rows sorted by `case_id` with valid schema and JSON.
+- [x] **`code.zip`**: Runnable .NET 10 solution, `README.md`, `code/evaluation/evaluation_report.md`, and `code/evaluation/usage_report.md`.
+- [x] **`log.txt`**: Complete per-turn development transcript matching `AGENTS.md` format.
+- [x] **Git Repository**: Remote synchronised at `https://github.com/kiranpinisetty/ghost-data-audit.git`.

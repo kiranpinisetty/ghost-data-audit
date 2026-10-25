@@ -33,6 +33,9 @@ public class RuleEngineService : IRuleEngineService
         if (_categoryToAction.TryGetValue(dataCategory, out var action))
             return action;
 
+        if (dataCategory.Equals("DATA_FLOW", StringComparison.OrdinalIgnoreCase))
+            return "DISABLE";
+
         _logger.LogWarning("No rule found for data category '{Category}' — defaulting to DELETE", dataCategory);
         return "DELETE";
     }

@@ -18,14 +18,17 @@ public class RequestClassifierService : IRequestClassifierService
         // English
         "do not close", "don't close", "do not delete", "don't delete",
         "do not remove", "don't remove", "don't erase",
-        "copy of", "export", "download my data",
+        "copy of", "export", "download my data", "download my account",
         "access my", "reset the login", "reset my password",
-        "marketing lists only", "opt-out", "opt out",
-        "leave my profile", "leave my account",
-        "still use it", "still want",
-        "invoices for my records",
-        "update my", "correct my", "correction",
-        "I still use", "keep my account",
+        "marketing lists only", "opt-out", "opt out", "unsubscribe",
+        "leave my profile", "leave my account", "leave the account active",
+        "still use it", "still want", "still need the account",
+        "invoices for my records", "receipt", "invoice",
+        "update my", "correct my", "correction", "misspelled",
+        "I still use", "keep my account", "keep the account",
+        "stop the promotional", "not asking for deletion", "not a request to erase",
+        "information request", "continue using the service", "continue using",
+        "change the email", "replace it with"
     };
 
     // Keywords that indicate the request IS a deletion request (across languages)

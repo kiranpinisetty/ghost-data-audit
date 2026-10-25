@@ -11,12 +11,11 @@ public interface IStepBuilderService
     /// Build the steps for an INCOMPLETE case: findings, remediation, verification.
     /// </summary>
     List<AuditStep> BuildIncompleteSteps(List<EvidenceRecord> findings, ResolvedIdentity identity,
-        string requiredActionLookup(string dataCategory));
+        Func<string, string> requiredActionLookup);
 
     /// <summary>
     /// Build the verification-only steps for a COMPLETE case.
     /// </summary>
     List<AuditStep> BuildCompleteSteps(List<EvidenceRecord> verifiedRecords, ResolvedIdentity identity,
-        string requiredActionLookup(string dataCategory));
+        Func<string, string> requiredActionLookup);
 }
-
