@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GhostDataAudit.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+77b2c132a9c0b89262783698d75a4195afdcb6f2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a0a05526587641ba4519258cf3afe99675418344")]
 [assembly: System.Reflection.AssemblyProductAttribute("GhostDataAudit.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GhostDataAudit.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
