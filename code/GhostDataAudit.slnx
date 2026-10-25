@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="GhostDataAudit.Api/GhostDataAudit.Api.csproj" />
+  <Project Path="GhostDataAudit.Tests/GhostDataAudit.Tests.csproj" />
 </Solution>
