@@ -69,3 +69,4 @@ The decision to encode business logic, identity resolution, and graph traversal 
 2. **Determinism**: 100% reproducible outcomes eliminating temperature variance and stochastic flakiness.
 3. **Latency**: Less than 2 seconds to audit the entire enterprise dataset.
 4. **Data Privacy**: No sensitive identity data or evidence content transmitted over external networks.
+

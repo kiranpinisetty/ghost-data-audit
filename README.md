@@ -72,6 +72,8 @@ To start the interactive HTTP service:
 dotnet run --project code/GhostDataAudit.Api
 ```
 
+- **Interactive Swagger UI**: `GET http://localhost:5000/swagger`
+- **OpenAPI v1 JSON**: `GET http://localhost:5000/swagger/v1/swagger.json`
 - **Health Endpoint**: `GET http://localhost:5000/`
 - **Dataset Diagnostics**: `GET http://localhost:5000/api/audit/diagnostics`
 - **Single Case Audit**: `POST http://localhost:5000/api/audit/audit-case`

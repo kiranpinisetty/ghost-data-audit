@@ -18,6 +18,18 @@ builder.Services.AddSingleton<IStepValidator, StepValidator>();
 builder.Services.AddSingleton<IOutputWriterService, OutputWriterService>();
 builder.Services.AddSingleton<IAuditOrchestratorService, AuditOrchestratorService>();
 
+// Configure Swagger / OpenAPI documentation
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "Ghost Data Still Exists - Deletion Audit API",
+        Version = "v1",
+        Description = "ASP.NET Core Web API for the HackerRank Orchestrate Ghost Data Still Exists challenge audit agent."
+    });
+});
+
 var app = builder.Build();
 
 // Helper to resolve dataset directory safely across different environments
@@ -75,6 +87,13 @@ if (args.Contains("--generate-output") || args.Contains("--run") || args.Contain
 }
 
 // Configure the HTTP request pipeline.
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Ghost Data Audit API v1");
+    c.RoutePrefix = "swagger";
+});
+
 app.UseExceptionHandler(errorApp =>
 {
     errorApp.Run(async context =>
@@ -91,7 +110,8 @@ app.MapGet("/", () => Results.Ok(new
 {
     Challenge = "HackerRank Orchestrate - Ghost Data Still Exists",
     Status = "Healthy",
-    ApiBase = "/api/audit"
+    ApiBase = "/api/audit",
+    SwaggerUI = "/swagger"
 }));
 
 app.Run();
